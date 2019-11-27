@@ -17,5 +17,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install
         run: npm i
+      - name: Start redis
+        run: docker run -d -p 6379:6379 --rm redis:5.0.7
       - name: Tests
         run: npm run test
