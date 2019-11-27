@@ -1,0 +1,31 @@
+{
+  "name": "ioredis-auto-pipeline",
+  "version": "0.0.1",
+  "description": "automatic redis pipeline",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard | snazzy && tap --no-esm test.js",
+    "redis": "docker run -p 6379:6379 --rm redis:5.0.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcollina/ioredis-auto-pipeline.git"
+  },
+  "keywords": [
+    "ioredis",
+    "pipeline",
+    "performance"
+  ],
+  "author": "Matteo Collina <hello@matteocollina.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mcollina/ioredis-auto-pipeline/issues"
+  },
+  "homepage": "https://github.com/mcollina/ioredis-auto-pipeline#readme",
+  "devDependencies": {
+    "ioredis": "^4.14.1",
+    "snazzy": "^8.0.0",
+    "standard": "^14.3.1",
+    "tap": "^14.10.2"
+  }
+}
