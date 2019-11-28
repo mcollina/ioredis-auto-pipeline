@@ -34,6 +34,7 @@ function auto (client) {
   function Pipeline () {
     this[kPipeline] = client.pipeline()
     this[kExec] = false
+    this.queued = 0
   }
 
   function addMethod (key) {
@@ -42,6 +43,8 @@ function auto (client) {
         this[kExec] = true
         process.nextTick(exec)
       }
+
+      this.queued++
 
       return new Promise((resolve, reject) => {
         this[kPipeline][key](...args, function (err, value) {
