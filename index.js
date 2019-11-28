@@ -31,35 +31,20 @@ function auto (client) {
     pipeline = undefined
   }
 
-  class Pipeline {
-    constructor (client) {
-      this[kPipeline] = client.pipeline()
-      this[kExec] = false
-    }
+  function Pipeline () {
+    this[kPipeline] = client.pipeline()
+    this[kExec] = false
+  }
 
-    get (key) {
+  function addMethod (key) {
+    Pipeline.prototype[key] = function wrap (...args) {
       if (!this[kExec]) {
         this[kExec] = true
-        setImmediate(exec)
+        process.nextTick(exec)
       }
-      return new Promise((resolve, reject) => {
-        this[kPipeline].get(key, function (err, value) {
-          if (err) {
-            reject(err)
-            return
-          }
-          resolve(value)
-        })
-      })
-    }
 
-    set (key, value) {
-      if (!this[kExec]) {
-        this[kExec] = true
-        setImmediate(exec)
-      }
       return new Promise((resolve, reject) => {
-        this[kPipeline].set(key, value, function (err, value) {
+        this[kPipeline][key](...args, function (err, value) {
           if (err) {
             reject(err)
             return
@@ -70,7 +55,15 @@ function auto (client) {
     }
   }
 
+  const notAllowedCommands = ['subscribe', 'psubscribe']
+  for (const cmd of client.getBuiltinCommands()) {
+    if (!notAllowedCommands.includes(cmd)) {
+      addMethod(cmd)
+    }
+  }
+
   return build
 }
 
 module.exports = auto
+module.exports.kPipeline = kPipeline

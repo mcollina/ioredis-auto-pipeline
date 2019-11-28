@@ -4,7 +4,7 @@ Automatic redis pipeline support.
 It can increase your throughput by up to 100%.
 See https://redis.io/topics/pipelining for more details.
 
-Currently it only supports GET and SET commands.
+All builtin commands
 
 ## Install
 

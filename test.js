@@ -34,3 +34,19 @@ test('loop gets', async ({ deepEqual }) => {
     'bar'
   ])
 })
+
+test('verify reject', async ({ deepEqual, rejects, is }) => {
+  const pipeline = auto(redis)
+  await pipeline().set('foo', 'bar')
+
+  pipeline()[auto.kPipeline].get = (key, cb) => {
+    is(key, 'foo')
+    process.nextTick(cb, new Error('kaboom'))
+  }
+
+  pipeline()[auto.kPipeline].exec = (cb) => {
+    process.nextTick(cb)
+  }
+
+  await rejects(pipeline().get('foo'))
+})
