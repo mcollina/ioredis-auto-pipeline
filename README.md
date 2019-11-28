@@ -22,6 +22,8 @@ async function run () {
   const redis = new Redis()
   const pipeline = auto(redis)
 
+  console.log(pipeline().queued) // number of ops in the queue
+
   // In any part of your code, call pipeline()
   // to schedule a command to be executed in the next
   // batch of commands.

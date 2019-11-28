@@ -50,3 +50,24 @@ test('verify reject', async ({ deepEqual, rejects, is }) => {
 
   await rejects(pipeline().get('foo'))
 })
+
+test('counter', async ({ is }) => {
+  const pipeline = auto(redis)
+  const first  = pipeline()
+  is(first.queued, 0)
+  const promise1 = first.set('foo', 'bar')
+  is(first.queued, 1)
+  await promise1
+
+  const second = pipeline()
+  is(second.queued, 0)
+  const promise2 = Promise.all([
+    second.get('foo'),
+    second.get('foo'),
+    second.get('foo'),
+    second.get('foo'),
+    second.get('foo')
+  ])
+  is(second.queued, 5)
+  await promise2
+})
