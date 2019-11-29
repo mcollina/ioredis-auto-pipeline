@@ -9,7 +9,7 @@ All builtin commands are supported, minus subscribe and psubscribe.
 ## Install
 
 ```
-npm ioredis-auto-pipeline
+npm install ioredis-auto-pipeline
 ```
 
 ## Example
