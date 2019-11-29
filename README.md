@@ -19,20 +19,19 @@ const Redis = require('ioredis')
 const auto = require('ioredis-auto-pipeline')
 
 async function run () {
-  const redis = new Redis()
-  const pipeline = auto(redis)
+  const redis = auto(new Redis())
 
-  console.log(pipeline.queued) // number of ops in the queue
+  console.log(redis.queued) // number of ops in the queue
 
   // In any part of your code, call pipeline()
   // to schedule a command to be executed in the next
   // batch of commands.
   const results = await Promise.all([
-    pipeline.get('foo'),
-    pipeline.get('foo'),
-    pipeline.get('foo'),
-    pipeline.get('foo'),
-    pipeline.get('foo')
+    redis.get('foo'),
+    redis.get('foo'),
+    redis.get('foo'),
+    redis.get('foo'),
+    redis.get('foo')
   ])
 
   console.log(results)

@@ -3,13 +3,39 @@
 const kPipeline = Symbol('pipeline')
 const kExec = Symbol('exec')
 
+const notAllowedCommands = ['subscribe', 'psubscribe']
+
 function auto (client) {
   let pipeline
   let running = false
 
+  const obj = {}
+
+  for (const cmd of client.getBuiltinCommands()) {
+    if (!notAllowedCommands.includes(cmd)) {
+      obj[cmd] = buildWrap(cmd, build, exec)
+    }
+  }
+
+  Object.defineProperty(obj, 'queued', {
+    get () {
+      return build().queued
+    }
+  })
+
+  Object.defineProperty(obj, kPipeline, {
+    get () {
+      return build()
+    }
+  })
+
+  return obj
+
   function build () {
     if (pipeline === undefined) {
-      pipeline = new Pipeline(client)
+      pipeline = client.pipeline()
+      pipeline[kExec] = false
+      pipeline.queued = 0
     }
 
     return pipeline
@@ -21,7 +47,7 @@ function auto (client) {
     }
 
     running = true
-    pipeline[kPipeline].exec(function () {
+    pipeline.exec(function () {
       running = false
 
       if (pipeline) {
@@ -29,12 +55,6 @@ function auto (client) {
       }
     })
     pipeline = undefined
-  }
-
-  function Pipeline () {
-    this[kPipeline] = client.pipeline()
-    this[kExec] = false
-    this.queued = 0
   }
 
   function buildWrap (key) {
@@ -49,7 +69,7 @@ function auto (client) {
       pipeline.queued++
 
       return new Promise(function (resolve, reject) {
-        pipeline[kPipeline][key](...args, function (err, value) {
+        pipeline[key](...args, function (err, value) {
           if (err) {
             reject(err)
             return
@@ -59,28 +79,6 @@ function auto (client) {
       })
     }
   }
-
-  const obj = {}
-  const notAllowedCommands = ['subscribe', 'psubscribe']
-  for (const cmd of client.getBuiltinCommands()) {
-    if (!notAllowedCommands.includes(cmd)) {
-      obj[cmd] = buildWrap(cmd)
-    }
-  }
-
-  Object.defineProperty(obj, 'queued', {
-    get () {
-      return build().queued
-    }
-  })
-
-  Object.defineProperty(obj, kPipeline, {
-    get () {
-      return build()[kPipeline]
-    }
-  })
-
-  return obj
 }
 
 module.exports = auto
