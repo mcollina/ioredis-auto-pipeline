@@ -56,16 +56,33 @@ function auto (client) {
         })
       })
     }
-  }
 
-  const notAllowedCommands = ['subscribe', 'psubscribe']
-  for (const cmd of client.getBuiltinCommands()) {
-    if (!notAllowedCommands.includes(cmd)) {
-      addMethod(cmd)
+    return function (...args) {
+      return build()[key](...args)
     }
   }
 
-  return build
+  const obj = {}
+  const notAllowedCommands = ['subscribe', 'psubscribe']
+  for (const cmd of client.getBuiltinCommands()) {
+    if (!notAllowedCommands.includes(cmd)) {
+      obj[cmd] = addMethod(cmd)
+    }
+  }
+
+  Object.defineProperty(obj, 'queued', {
+    get () {
+      return build().queued
+    }
+  })
+
+  Object.defineProperty(obj, kPipeline, {
+    get () {
+      return build()[kPipeline]
+    }
+  })
+
+  return obj
 }
 
 module.exports = auto

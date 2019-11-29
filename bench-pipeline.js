@@ -33,7 +33,7 @@ const key = 'TEST-KEY';
         .fill(1)
         .forEach((count, i) => {
           start = Date.now()
-          pipeline()
+          pipeline
             .get(key)
             .then(ret => {
               JSON.parse(ret)
