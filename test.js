@@ -53,7 +53,7 @@ test('verify reject', async ({ deepEqual, rejects, is }) => {
 
 test('counter', async ({ is }) => {
   const pipeline = auto(redis)
-  const first  = pipeline()
+  const first = pipeline()
   is(first.queued, 0)
   const promise1 = first.set('foo', 'bar')
   is(first.queued, 1)
