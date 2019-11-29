@@ -37,17 +37,19 @@ function auto (client) {
     this.queued = 0
   }
 
-  function addMethod (key) {
-    Pipeline.prototype[key] = function wrap (...args) {
-      if (!this[kExec]) {
-        this[kExec] = true
+  function buildWrap (key) {
+    return function (...args) {
+      const pipeline = build()
+
+      if (!pipeline[kExec]) {
+        pipeline[kExec] = true
         process.nextTick(exec)
       }
 
-      this.queued++
+      pipeline.queued++
 
-      return new Promise((resolve, reject) => {
-        this[kPipeline][key](...args, function (err, value) {
+      return new Promise(function (resolve, reject) {
+        pipeline[kPipeline][key](...args, function (err, value) {
           if (err) {
             reject(err)
             return
@@ -56,17 +58,13 @@ function auto (client) {
         })
       })
     }
-
-    return function (...args) {
-      return build()[key](...args)
-    }
   }
 
   const obj = {}
   const notAllowedCommands = ['subscribe', 'psubscribe']
   for (const cmd of client.getBuiltinCommands()) {
     if (!notAllowedCommands.includes(cmd)) {
-      obj[cmd] = addMethod(cmd)
+      obj[cmd] = buildWrap(cmd)
     }
   }
 
