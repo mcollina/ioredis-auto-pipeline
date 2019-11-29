@@ -13,33 +13,33 @@ function auto (client) {
 
   for (const cmd of client.getBuiltinCommands()) {
     if (!notAllowedCommands.includes(cmd)) {
-      obj[cmd] = buildWrap(cmd, build, exec)
+      obj[cmd] = buildWrap(cmd)
     }
   }
 
   Object.defineProperty(obj, 'queued', {
     get () {
-      return build().queued
+      if (pipeline === undefined) {
+        return 0
+      }
+
+      return pipeline.queued
     }
   })
 
   Object.defineProperty(obj, kPipeline, {
     get () {
-      return build()
+      if (pipeline === undefined) {
+        pipeline = client.pipeline()
+        pipeline[kExec] = false
+        pipeline.queued = 0
+      }
+
+      return pipeline
     }
   })
 
   return obj
-
-  function build () {
-    if (pipeline === undefined) {
-      pipeline = client.pipeline()
-      pipeline[kExec] = false
-      pipeline.queued = 0
-    }
-
-    return pipeline
-  }
 
   function exec () {
     if (running) {
@@ -59,7 +59,7 @@ function auto (client) {
 
   function buildWrap (key) {
     return function (...args) {
-      const pipeline = build()
+      const pipeline = this[kPipeline]
 
       if (!pipeline[kExec]) {
         pipeline[kExec] = true
