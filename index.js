@@ -5,7 +5,7 @@ const kExec = Symbol('exec')
 const notAllowedCommands = ['subscribe', 'psubscribe']
 const preloader = require('./preloader')
 const preloaded = require.main === undefined
-
+const noop = () => {}
 if (preloaded) preloader(auto)
 
 function auto (client) {
@@ -63,6 +63,9 @@ function auto (client) {
   function buildWrap (key) {
     return function (...args) {
       const pipeline = this[kPipeline]
+      let cb = args.slice(-1)[0]
+      if (typeof cb === 'function') args.pop()
+      else cb = noop
 
       if (!pipeline[kExec]) {
         pipeline[kExec] = true
@@ -71,12 +74,15 @@ function auto (client) {
 
       pipeline.queued++
 
+      // even if there is a callback ioredis always returns a promise
       return new Promise(function (resolve, reject) {
         pipeline[key](...args, function (err, value) {
           if (err) {
+            cb(err)
             reject(err)
             return
           }
+          cb(null, value)
           resolve(value)
         })
       })

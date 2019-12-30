@@ -70,3 +70,15 @@ test('counter', async ({ is }) => {
   is(pipeline.queued, 5)
   await promise2
 })
+
+test('supports callback style', ({ is, end, error }) => {
+  const pipeline = redis
+  pipeline.set('foo', 'bar', (err) => {
+    error(err)
+    pipeline.get('foo', (err, res) => {
+      error(err)
+      is(res, 'bar')
+      end()
+    })
+  })
+})

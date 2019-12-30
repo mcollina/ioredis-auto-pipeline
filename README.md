@@ -60,6 +60,23 @@ async function run () {
 run()
 ```
 
+Callback style is also supported:
+
+```js
+const Redis = require('ioredis')
+const auto = require('ioredis-auto-pipeline')
+const async = require('async')
+const redis = auto(new Redis())
+async.parallel([
+  (cb) => { redis.get('foo', cb)) },
+  (cb) => { redis.get('bar', cb)) },
+], (err, results) => {
+  if (err) console.error(err)
+  else console.log(results)
+  redis.quit()
+})
+```
+
 ## License
 
 MIT
