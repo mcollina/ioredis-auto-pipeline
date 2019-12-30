@@ -1,6 +1,6 @@
 'use strict'
-
 const { test, teardown } = require('tap')
+
 const Redis = require('ioredis')
 
 const auto = require('..')
