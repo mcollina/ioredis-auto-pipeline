@@ -12,7 +12,26 @@ All builtin commands are supported, minus subscribe and psubscribe.
 npm install ioredis-auto-pipeline
 ```
 
-## Example
+## Preload
+
+To automatically instrument every usage of `ioredis` with `ioredis-auto-pipeline` this module can be used as a preloader like so:
+
+```sh
+node -r ioredis-auto-pipeline app.js
+```
+
+When using the preloader, to opt-out of pipelined commands use the `redis.single`, for example
+
+```js
+const Redis = require('ioredis')
+const redis = new Redis()
+async function run () {
+  await redis.single.get('foo') // run a command without pipelining
+}
+```
+
+
+## API Example
 
 ```js
 const Redis = require('ioredis')

@@ -2,7 +2,8 @@
 
 const { test, teardown } = require('tap')
 const Redis = require('ioredis')
-const auto = require('.')
+
+const auto = require('..')
 
 const redis = new Redis()
 
@@ -11,13 +12,13 @@ teardown(async () => {
 })
 
 test('automatic create a pipeline', async ({ is }) => {
-  const pipeline = auto(redis)
+  const pipeline = redis
   await pipeline.set('foo', 'bar')
   is(await pipeline.get('foo'), 'bar')
 })
 
 test('loop gets', async ({ deepEqual }) => {
-  const pipeline = auto(redis)
+  const pipeline = redis
   await pipeline.set('foo', 'bar')
 
   deepEqual(await Promise.all([
@@ -35,8 +36,8 @@ test('loop gets', async ({ deepEqual }) => {
   ])
 })
 
-test('verify reject', async ({ deepEqual, rejects, is }) => {
-  const pipeline = auto(redis)
+test('verify reject', async ({ rejects, is }) => {
+  const pipeline = redis
   await pipeline.set('foo', 'bar')
 
   pipeline[auto.kPipeline].get = (key, cb) => {
@@ -52,7 +53,7 @@ test('verify reject', async ({ deepEqual, rejects, is }) => {
 })
 
 test('counter', async ({ is }) => {
-  const pipeline = auto(redis)
+  const pipeline = redis
   is(pipeline.queued, 0)
   const promise1 = pipeline.set('foo', 'bar')
   is(pipeline.queued, 1)
