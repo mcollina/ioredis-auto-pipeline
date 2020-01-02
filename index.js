@@ -3,10 +3,12 @@
 const kPipeline = Symbol('pipeline')
 const kExec = Symbol('exec')
 const notAllowedCommands = ['subscribe', 'psubscribe']
-const preloader = require('./preloader')
 const preloaded = require.main === undefined
 const noop = () => {}
-if (preloaded) preloader(auto)
+if (preloaded) {
+  const preloader = require('./preloader')
+  preloader(auto)
+}
 
 function auto (client) {
   let pipeline
