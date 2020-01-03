@@ -2,7 +2,7 @@
 
 const { test, teardown } = require('tap')
 const Redis = require('ioredis')
-const auto = require('.')
+const auto = require('..')
 
 const redis = new Redis()
 
@@ -35,7 +35,7 @@ test('loop gets', async ({ deepEqual }) => {
   ])
 })
 
-test('verify reject', async ({ deepEqual, rejects, is }) => {
+test('verify reject', async ({ rejects, is }) => {
   const pipeline = auto(redis)
   await pipeline.set('foo', 'bar')
 
@@ -68,4 +68,16 @@ test('counter', async ({ is }) => {
   ])
   is(pipeline.queued, 5)
   await promise2
+})
+
+test('supports callback style', ({ is, end, error }) => {
+  const pipeline = auto(redis)
+  pipeline.set('foo', 'bar', (err) => {
+    error(err)
+    pipeline.get('foo', (err, res) => {
+      error(err)
+      is(res, 'bar')
+      end()
+    })
+  })
 })

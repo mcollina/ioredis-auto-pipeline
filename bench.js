@@ -1,6 +1,7 @@
 'use strict'
 
 const Redis = require('ioredis')
+const preloaded = require.resolve('.') in require.cache
 const auto = require('.')
 
 let redis = new Redis({
@@ -8,7 +9,7 @@ let redis = new Redis({
   host: '127.0.0.1'
 })
 
-if (process.argv[2] !== 'single') {
+if (preloaded === false && process.argv[2] !== 'single') {
   redis = auto(redis)
 }
 

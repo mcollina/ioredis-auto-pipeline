@@ -4,7 +4,7 @@
   "description": "automatic redis pipeline",
   "main": "index.js",
   "scripts": {
-    "test": "standard | snazzy && tap --no-esm test.js",
+    "test": "standard | snazzy && (node test/api.js && node -r . test/preloader.js) | tap -",
     "redis": "docker run -p 6379:6379 --rm redis:5.0.7"
   },
   "repository": {
