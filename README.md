@@ -66,16 +66,15 @@ To automatically instrument every usage of `ioredis` with `ioredis-auto-pipeline
 node -r ioredis-auto-pipeline app.js
 ```
 
-When using the preloader, to opt-out of pipelined commands use the `redis.single`, for example
+When using the preloader, to opt-out of pipelined commands use `redis.client`, for example
 
 ```js
 const Redis = require('ioredis')
 const redis = new Redis()
 async function run () {
-  await redis.single.get('foo') // run a command without pipelining
+  await redis.client.get('foo') // run a command without pipelining
 }
 ```
-
 
 ## License
 

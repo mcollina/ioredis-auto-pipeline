@@ -2,7 +2,6 @@
 
 const Redis = require('ioredis')
 const preloaded = require.resolve('.') in require.cache
-
 const auto = require('.')
 
 let redis = new Redis({
