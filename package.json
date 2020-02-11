@@ -1,6 +1,6 @@
 {
   "name": "ioredis-auto-pipeline",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "automatic redis pipeline",
   "main": "index.js",
   "scripts": {
