@@ -3,7 +3,7 @@
 const kPipeline = Symbol('pipeline')
 const kExec = Symbol('exec')
 
-const notAllowedCommands = ['subscribe', 'psubscribe']
+const notAllowedCommands = ['subscribe', 'psubscribe', 'pipeline', 'multi']
 
 function auto (client) {
   let pipeline

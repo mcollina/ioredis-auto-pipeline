@@ -16,6 +16,14 @@ test('automatic create a pipeline', async ({ is }) => {
   is(await pipeline.get('foo'), 'bar')
 })
 
+test('hide non-compatible commands', async ({ is }) => {
+  const pipeline = auto(redis)
+  const notAllowedCommands = ['subscribe', 'psubscribe', 'pipeline', 'multi']
+  for (const cmd of notAllowedCommands) {
+    is(pipeline[cmd], undefined)
+  }
+})
+
 test('loop gets', async ({ deepEqual }) => {
   const pipeline = auto(redis)
   await pipeline.set('foo', 'bar')
