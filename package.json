@@ -4,7 +4,7 @@
   "description": "automatic redis pipeline",
   "main": "index.js",
   "scripts": {
-    "test": "standard | snazzy && tap --no-esm --no-jsx --no-ts test.js",
+    "test": "standard | snazzy && tap --no-esm --no-jsx --no-ts test/*.test.js",
     "redis": "docker run -p 6379:6379 --rm redis:5.0.7"
   },
   "repository": {
@@ -22,15 +22,14 @@
     "url": "https://github.com/mcollina/ioredis-auto-pipeline/issues"
   },
   "homepage": "https://github.com/mcollina/ioredis-auto-pipeline#readme",
+  "dependencies": {},
   "devDependencies": {
+    "cronometro": "^0.4.0",
     "husky": "^4.0.1",
     "ioredis": "^4.14.1",
     "snazzy": "^8.0.0",
     "standard": "^14.3.1",
     "tap": "^14.10.2"
-  },
-  "dependencies": {
-    "to-fast-properties": "^3.0.0"
   },
   "husky": {
     "hooks": {

@@ -1,7 +1,7 @@
 'use strict'
 
 const Redis = require('ioredis')
-const auto = require('.')
+const auto = require('..')
 
 let redis = new Redis({
   port: 6379,
