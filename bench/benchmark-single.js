@@ -1,10 +1,11 @@
 'use strict'
 
-const { isMainThread } = require('worker_threads')
+const cronometro = require('cronometro')
 const Redis = require('ioredis')
+const { isMainThread } = require('worker_threads')
+
 const autoProxy = require('..')
 const autoOld = require('./old')
-const cronometro = require('cronometro')
 
 const redisOldClient = new Redis({ port: 6379, host: '127.0.0.1' })
 const redisProxy = autoProxy(new Redis({ port: 6379, host: '127.0.0.1' }))
