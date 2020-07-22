@@ -11,9 +11,11 @@ teardown(async () => {
 })
 
 test('automatic create a pipeline', async ({ plan, is }) => {
-  plan(3)
+  plan(4)
 
   const pipeline = auto(redis)
+  is(pipeline.wrapped, redis)
+
   await pipeline.set('foo', 'bar')
   is(pipeline.queued, 0)
 
