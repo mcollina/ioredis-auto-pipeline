@@ -19,6 +19,8 @@ const redis = new Redis.Cluster([
   }
 ])
 
+redis.defineCommand('custom', { numberOfKeys: 1, lua: 'return {KEYS[1]}' })
+
 teardown(async () => {
   await redis.quit()
 })
@@ -27,7 +29,6 @@ test('automatic create a pipeline', async ({ plan, is }) => {
   plan(3)
 
   const pipeline = auto(redis)
-  await pipeline.ready()
 
   await pipeline.set('foo', 'bar')
   is(pipeline.queued, 0)
@@ -42,7 +43,6 @@ test('do not wrap non-compatible commands', async ({ plan, is }) => {
   plan(2)
 
   const pipeline = auto(redis)
-  await pipeline.ready()
 
   is(pipeline.queued, 0)
   const promises = []
@@ -78,31 +78,26 @@ test('loop gets', async ({ plan, deepEqual }) => {
   plan(1)
 
   const pipeline = auto(redis)
-  await pipeline.ready()
 
   await pipeline.set('foo1', 'bar')
   await pipeline.set('foo2', 'bar')
 
-  deepEqual(await Promise.all([
-    pipeline.get('foo1'),
-    pipeline.get('foo2'),
-    pipeline.get('foo1'),
-    pipeline.get('foo2'),
-    pipeline.get('foo1')
-  ]), [
-    'bar',
-    'bar',
-    'bar',
-    'bar',
-    'bar'
-  ])
+  deepEqual(
+    await Promise.all([
+      pipeline.get('foo1'),
+      pipeline.get('foo2'),
+      pipeline.get('foo1'),
+      pipeline.get('foo2'),
+      pipeline.get('foo1')
+    ]),
+    ['bar', 'bar', 'bar', 'bar', 'bar']
+  )
 })
 
 test('verify reject', async ({ plan, deepEqual, rejects, is }) => {
   plan(1)
 
   const pipeline = auto(redis)
-  await pipeline.ready()
 
   await rejects(pipeline.set('foo'))
 })
@@ -111,7 +106,6 @@ test('counter', async ({ plan, is }) => {
   plan(4)
 
   const pipeline = auto(redis)
-  await pipeline.ready()
 
   is(pipeline.queued, 0)
   const promise1 = pipeline.set('foo1', 'bar')
@@ -134,113 +128,128 @@ test('counter', async ({ plan, is }) => {
 })
 
 test('supports callback in the happy case', ({ plan, is, error }) => {
-  plan(11)
+  plan(9)
 
   const pipeline = auto(redis)
+  let value1, value2
 
-  pipeline.ready((err) => {
-    error(err)
-
-    let value1
+  function done () {
+    is(value1, 'bar1')
+    is(value2, 'bar2')
     is(pipeline.queued, 0)
+  }
 
-    pipeline.set('foo1', 'bar1', () => { })
+  /*
+    In this test, foo1 and foo2 usually (like in the case of 3 nodes scenario) belongs
+    to different nodes group.
+    Therefore we are also testing callback scenario with multiple pipelines fired together.
+  */
+  pipeline.set('foo1', 'bar1', () => {})
 
-    is(pipeline.queued, 1)
+  is(pipeline.queued, 1)
 
-    pipeline.set('foo2', 'bar2', () => {
-      pipeline.get('foo1', (err, v1) => {
-        error(err)
-        value1 = v1
-      })
-
-      is(pipeline.queued, 1)
-
-      pipeline.get('foo2', (err, value2) => {
-        error(err)
-
-        is(value1, 'bar1')
-        is(value2, 'bar2')
-        is(pipeline.queued, 0)
-      })
-
-      is(pipeline.queued, 2)
-    })
-
-    is(pipeline.queued, 2)
-  })
-})
-
-test('supports callback in the failure case', ({ plan, is, error }) => {
-  plan(6)
-
-  const pipeline = auto(redis)
-
-  pipeline.ready((err) => {
-    error(err)
-
-    is(pipeline.queued, 0)
-
-    pipeline.set('foo1', 'bar1', (err) => {
+  pipeline.set('foo2', 'bar2', () => {
+    pipeline.get('foo1', (err, v1) => {
       error(err)
+      value1 = v1
+
+      // This is needed as we cannot really predict which nodes responds first
+      if (value1 && value2) {
+        done()
+      }
     })
 
     is(pipeline.queued, 1)
 
-    pipeline.set('foo2', (err) => {
-      is(err.message, "ERR wrong number of arguments for 'set' command")
+    pipeline.get('foo2', (err, v2) => {
+      error(err)
+      value2 = v2
+
+      // This is needed as we cannot really predict which nodes responds first
+      if (value1 && value2) {
+        done()
+      }
     })
 
     is(pipeline.queued, 2)
   })
+
+  is(pipeline.queued, 2)
 })
 
-test('.ready works with promises', async ({ plan, is }) => {
-  plan(1)
-
-  const redis = new Redis.Cluster([
-    {
-      host: '127.0.0.1',
-      port: 30001
-    },
-    {
-      host: '127.0.0.1',
-      port: 30002
-    },
-    {
-      host: '127.0.0.1',
-      port: 30003
-    }
-  ])
-
-  const pipeline = auto(redis)
-  await pipeline.ready()
-  is(pipeline.status, 'ready')
-  await pipeline.quit()
-})
-
-test('.ready works with callbacks', ({ plan, is }) => {
-  plan(1)
-
-  const redis = new Redis.Cluster([
-    {
-      host: '127.0.0.1',
-      port: 30001
-    },
-    {
-      host: '127.0.0.1',
-      port: 30002
-    },
-    {
-      host: '127.0.0.1',
-      port: 30003
-    }
-  ])
+test('supports callbacks in the failure case', ({ plan, is, error }) => {
+  plan(4)
 
   const pipeline = auto(redis)
 
-  pipeline.ready(() => {
-    is(pipeline.status, 'ready')
-    pipeline.quit()
+  pipeline.set('foo1', 'bar1', err => {
+    error(err)
   })
+
+  is(pipeline.queued, 1)
+
+  pipeline.set('foo2', err => {
+    is(err.message, "ERR wrong number of arguments for 'set' command")
+  })
+
+  is(pipeline.queued, 2)
+})
+
+test('should handle callbacks failures', ({ plan, is, error }) => {
+  plan(5)
+
+  const pipeline = auto(redis)
+  is(pipeline.queued, 0)
+
+  pipeline.set('foo1', 'bar1', err => {
+    error(err)
+
+    throw new Error('E')
+  })
+
+  pipeline.set('foo2', 'bar2', err => {
+    error(err)
+
+    is(pipeline.queued, 0)
+  })
+
+  is(pipeline.queued, 2)
+})
+
+test('should handle general pipeline failures', ({ plan, is, error }) => {
+  plan(4)
+
+  const pipeline = auto(redis, { whitelist: ['custom'] })
+
+  is(pipeline.queued, 0)
+
+  pipeline.custom('foo1', err => {
+    is(err.message, 'Sending custom commands in pipeline is not supported in Cluster mode.')
+  })
+
+  pipeline.set('foo1', 'bar1', err => {
+    is(err.message, 'Sending custom commands in pipeline is not supported in Cluster mode.')
+  })
+
+  is(pipeline.queued, 2)
+})
+
+test('should handle general pipeline failures callback failure', ({ plan, is, error }) => {
+  plan(4)
+
+  const pipeline = auto(redis, { whitelist: ['custom'] })
+
+  is(pipeline.queued, 0)
+
+  pipeline.custom('foo1', err => {
+    is(err.message, 'Sending custom commands in pipeline is not supported in Cluster mode.')
+
+    throw new Error('E')
+  })
+
+  pipeline.set('foo1', 'bar1', err => {
+    is(err.message, 'Sending custom commands in pipeline is not supported in Cluster mode.')
+  })
+
+  is(pipeline.queued, 2)
 })

@@ -64,19 +64,16 @@ test('loop gets', async ({ plan, deepEqual }) => {
   const pipeline = auto(redis)
   await pipeline.set('foo', 'bar')
 
-  deepEqual(await Promise.all([
-    pipeline.get('foo'),
-    pipeline.get('foo'),
-    pipeline.get('foo'),
-    pipeline.get('foo'),
-    pipeline.get('foo')
-  ]), [
-    'bar',
-    'bar',
-    'bar',
-    'bar',
-    'bar'
-  ])
+  deepEqual(
+    await Promise.all([
+      pipeline.get('foo'),
+      pipeline.get('foo'),
+      pipeline.get('foo'),
+      pipeline.get('foo'),
+      pipeline.get('foo')
+    ]),
+    ['bar', 'bar', 'bar', 'bar', 'bar']
+  )
 })
 
 test('verify reject', async ({ plan, deepEqual, rejects, is }) => {
@@ -115,7 +112,7 @@ test('supports callback in the happy case', ({ plan, is, error }) => {
   let value1
   is(pipeline.queued, 0)
 
-  pipeline.set('foo1', 'bar1', () => { })
+  pipeline.set('foo1', 'bar1', () => {})
 
   is(pipeline.queued, 1)
 
@@ -147,14 +144,35 @@ test('supports callback in the failure case', ({ plan, is, error }) => {
   const pipeline = auto(redis)
   is(pipeline.queued, 0)
 
-  pipeline.set('foo1', 'bar1', (err) => {
+  pipeline.set('foo1', 'bar1', err => {
     error(err)
   })
 
   is(pipeline.queued, 1)
 
-  pipeline.set('foo2', (err) => {
+  pipeline.set('foo2', err => {
     is(err.message, "ERR wrong number of arguments for 'set' command")
+  })
+
+  is(pipeline.queued, 2)
+})
+
+test('should handle callbacks failures', ({ plan, is, error }) => {
+  plan(5)
+
+  const pipeline = auto(redis)
+  is(pipeline.queued, 0)
+
+  pipeline.set('foo1', 'bar1', err => {
+    error(err)
+
+    throw new Error('E')
+  })
+
+  pipeline.set('foo2', 'bar2', err => {
+    error(err)
+
+    is(pipeline.queued, 0)
   })
 
   is(pipeline.queued, 2)

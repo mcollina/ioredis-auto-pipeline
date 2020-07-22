@@ -61,4 +61,4 @@ typings/
 .next
 
 # benchmark files
-bench/keys.txt
+bench/*.txt
