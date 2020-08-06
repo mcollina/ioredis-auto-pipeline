@@ -7,11 +7,9 @@ const { join } = require('path')
 const { isMainThread } = require('worker_threads')
 
 const auto = require('..')
-const autoOld = require('./old')
 
 const redis = new Redis({ port: 6379, host: '127.0.0.1' })
 const autoRedis = auto(new Redis({ port: 6379, host: '127.0.0.1' }))
-const autoRedisOld = autoOld(redis)
 
 function command () {
   const choice = Math.random()
@@ -54,7 +52,7 @@ async function start () {
 
   console.log('Starting benchmark against the server ...')
 
-  await cronometro({ auto: true, old: true, base: true }, { print: { compare: true } })
+  await cronometro({ auto: true, base: true }, { print: { compare: true } })
 
   await autoRedis.quit()
   await redis.quit()
@@ -70,11 +68,6 @@ if (isMainThread) {
       const index = Math.floor(Math.random() * keys.length)
 
       return Promise.all(Array.from(Array(1e3)).map(() => autoRedis[command()](keys[index])))
-    },
-    old () {
-      const index = Math.floor(Math.random() * keys.length)
-
-      return Promise.all(Array.from(Array(1e3)).map(() => autoRedisOld[command()](keys[index])))
     },
     base () {
       const index = Math.floor(Math.random() * keys.length)
