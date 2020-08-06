@@ -10,7 +10,7 @@ teardown(async () => {
   await redis.quit()
 })
 
-test('automatic create a pipeline', async ({ plan, is }) => {
+test('should automatic create a pipeline', async ({ plan, is }) => {
   plan(4)
 
   const pipeline = auto(redis)
@@ -25,7 +25,35 @@ test('automatic create a pipeline', async ({ plan, is }) => {
   is(await promise, 'bar')
 })
 
-test('do not wrap non-compatible commands', async ({ plan, is }) => {
+test('should support commands queued after a pipeline is already queued for execution', ({ plan, is, error }) => {
+  plan(7)
+
+  const pipeline = auto(redis)
+  let value1
+  is(pipeline.queued, 0)
+
+  pipeline.set('foo1', 'bar1', () => {})
+  pipeline.set('foo2', 'bar2', () => {})
+
+  pipeline.get('foo1', (err, v1) => {
+    error(err)
+    value1 = v1
+  })
+
+  process.nextTick(() => {
+    pipeline.get('foo2', (err, value2) => {
+      error(err)
+
+      is(value1, 'bar1')
+      is(value2, 'bar2')
+      is(pipeline.queued, 0)
+    })
+  })
+
+  is(pipeline.queued, 3)
+})
+
+test('should not wrap non-compatible commands', async ({ plan, is }) => {
   plan(2)
 
   const pipeline = auto(redis)
@@ -40,7 +68,7 @@ test('do not wrap non-compatible commands', async ({ plan, is }) => {
   await promises
 })
 
-test('hide blacklisted commands', async ({ plan, is, isNot }) => {
+test('should hide blacklisted commands', async ({ plan, is, isNot }) => {
   plan(2)
 
   const pipeline = auto(redis, { blacklist: ['hmget'] })
@@ -52,7 +80,7 @@ test('hide blacklisted commands', async ({ plan, is, isNot }) => {
   await promise
 })
 
-test('include whitelisted commands', async ({ plan, isNot }) => {
+test('should include whitelisted commands', async ({ plan, isNot }) => {
   plan(1)
 
   const pipeline = auto(redis, { whitelist: ['whatever'] })
@@ -60,7 +88,7 @@ test('include whitelisted commands', async ({ plan, isNot }) => {
   isNot(pipeline.whatever, undefined)
 })
 
-test('loop gets', async ({ plan, deepEqual }) => {
+test('should support multiple commands', async ({ plan, deepEqual }) => {
   plan(1)
 
   const pipeline = auto(redis)
@@ -78,7 +106,7 @@ test('loop gets', async ({ plan, deepEqual }) => {
   )
 })
 
-test('verify reject', async ({ plan, deepEqual, rejects, is }) => {
+test('should handle rejections', async ({ plan, deepEqual, rejects, is }) => {
   plan(1)
 
   const pipeline = auto(redis)
@@ -86,7 +114,7 @@ test('verify reject', async ({ plan, deepEqual, rejects, is }) => {
   await rejects(pipeline.set('foo'))
 })
 
-test('counter', async ({ plan, is }) => {
+test('should correctly track pipeline length', async ({ plan, is }) => {
   plan(4)
 
   const pipeline = auto(redis)
@@ -107,7 +135,7 @@ test('counter', async ({ plan, is }) => {
   await promise2
 })
 
-test('supports callback in the happy case', ({ plan, is, error }) => {
+test('should support callbacks in the happy case', ({ plan, is, error }) => {
   plan(10)
 
   const pipeline = auto(redis)
@@ -140,7 +168,7 @@ test('supports callback in the happy case', ({ plan, is, error }) => {
   is(pipeline.queued, 2)
 })
 
-test('supports callback in the failure case', ({ plan, is, error }) => {
+test('should support callbacks in the failure case', ({ plan, is, error }) => {
   plan(5)
 
   const pipeline = auto(redis)
@@ -159,8 +187,9 @@ test('supports callback in the failure case', ({ plan, is, error }) => {
   is(pipeline.queued, 2)
 })
 
-test('should handle callbacks failures', ({ plan, is, error }) => {
-  plan(5)
+test('should handle callbacks failures', ({ plan, is, error, throws, expectUncaughtException }) => {
+  plan(6)
+  expectUncaughtException(new Error('ERROR'))
 
   const pipeline = auto(redis)
   is(pipeline.queued, 0)
@@ -168,7 +197,7 @@ test('should handle callbacks failures', ({ plan, is, error }) => {
   pipeline.set('foo1', 'bar1', err => {
     error(err)
 
-    throw new Error('E')
+    throw new Error('ERROR')
   })
 
   pipeline.set('foo2', 'bar2', err => {
