@@ -18,7 +18,16 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install
         run: npm i
-      - name: Start redis
+      - name: Start Redis
         run: docker run -d -p 6379:6379 --rm redis:5.0.7
+      - name: Start Redis Cluster
+        uses: vishnudxb/redis-cluster@1.0.5
+        with:
+          master1-port: 30001
+          master2-port: 30002
+          master3-port: 30003
+          slave1-port: 30004
+          slave2-port: 30005
+          slave3-port: 30006
       - name: Tests
         run: npm run test
